@@ -93,7 +93,7 @@ class Strategy:
 
     def process(self, index: int):
         #startYear condition
-        if( self.timeseries["time"][index] <= "2018-01-02" or self.timeseries["time"][index] >= "2024-12-22"):
+        if( self.timeseries["time"][index] <= "2018-01-02" or self.timeseries["time"][index] >= "2025-01-07"):
             return
 
         if(self.state == "neutral"):

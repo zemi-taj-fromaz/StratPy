@@ -18,15 +18,23 @@ class DemaATR:
     def get_top_results(self):
         return sorted(self.top_results, key=lambda x: -x[0])
 
+    def print_top_results(self):
+        top_results = self.get_top_results()
+        print("Top Results:")
+        for result in top_results:
+            params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
+            print(", ".join(params))
+
     def run_test(self):
 
-        for demaLength in range(7,14):
-            for lookback in range(5,12):
-
-
-                for atrFactor in [x * 0.01 for x in range(120, 180, 2)]:  # Step by 0.1
+        for demaLength in range(1,9):
+            for lookback in range(11,17):
+                for atrFactor in [x * 0.01 for x in range(120, 200, 2)]:  # Step by 0.1
                     equity = self.calculate(demaLength, lookback, atrFactor)
+                    print(equity)
                     self.store_result(equity, demaLength, lookback, atrFactor)
+        self.print_top_results()
+
     def calculate(self, demaLength: int, lookback: int, atrFactor: float = 1.0):
         print("Calculating for : " + str(demaLength) + "," + str(lookback) + "," + str(atrFactor))
         self.timeseries.ta.atr(length= lookback, append=True)

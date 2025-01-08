@@ -22,22 +22,26 @@ class DemaRSIOverlay:
     def get_top_results(self):
         return sorted(self.top_results, key=lambda x: -x[0])
 
+    def print_top_results(self):
+        top_results = self.get_top_results()
+        print("Top Results:")
+        for result in top_results:
+            params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
+            print(", ".join(params))
+
     def run_test(self):
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for demaLength in range(22, 37):
+        for demaLength in range(36, 48):
             for rsi_length in range(12, 18):
-                for long_threshold in range(68, 72):
-                    for short_threshold in range(53, 57):
+                for long_threshold in range(60, 70):
+                    for short_threshold in range(37, 50):
                         equity = self.calculate(demaLength, rsi_length, long_threshold, short_threshold)
+                        print(equity)
                         self.store_result(equity, demaLength, rsi_length, long_threshold, short_threshold)
 
-        # Print top results
-        top_results = self.get_top_results()
-        print("Top Results:")
-        for result in top_results:
-            print(f"Equity: {result[0]}, DEMA Length: {result[1]}, Lookback: {result[2]}, Long: {result[3]}, Short: {result[4]}")
+        self.print_top_results()
 
 
     def calculate(self, dema_length: int, rsi_length: int, long_threshold: float, short_threshold: float):

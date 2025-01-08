@@ -18,13 +18,22 @@ class INDI7525:
     def get_top_results(self):
         return sorted(self.top_results, key=lambda x: -x[0])
 
+    def print_top_results(self):
+        top_results = self.get_top_results()
+        print("Top Results:")
+        for result in top_results:
+            params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
+            print(", ".join(params))
+
     def run_test(self):
         for length in range(15,20):
-            for atr_length in range(14,19):
-                for mult75 in [x * 0.1 for x in range(8, 21, 1)]:  # Step by 0.1
-                    for mult25 in [x * 0.1 for x in range(8, 21, 1)]:  # Step by 0.1
+            for atr_length in range(19,31):
+                for mult75 in [x * 0.1 for x in range(8, 13, 1)]:  # Step by 0.1
+                    for mult25 in [x * 0.1 for x in range(16, 23, 1)]:  # Step by 0.1
                         equity = self.calculate(length, atr_length, mult75, mult25)
+                        print(equity)
                         self.store_result(equity, length, atr_length, mult75, mult25)
+        self.print_top_results()
 
 
     def calculate(self, length: int, atr_length: int, mult75: float, mult25: float):
