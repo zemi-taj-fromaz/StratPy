@@ -18,11 +18,21 @@ import Indicators.KalmanRSI as krs
 import Indicators.CasperSupertrend as cstd
 import Indicators.RMAJordo as jordo # 83 - 1.07 11 1.45
 import Indicators.EMAJordo as jordoema
+import Indicators.ISDDemaRSI as vii
+import Indicators.DemaSupertrend as dst
+import Indicators.DoubleSrcSMASD as dssmasd
+import Indicators.DemaSMASD as demasmasd
+import Indicators.ViiStop
+import Indicators.ViiStop as vst
+import Indicators.EWMA
+import Indicators.DemaEmaCross
+import Indicators.DemaDMI
+import Indicators.DSMA
 
 df = pd.DataFrame() # Empty DataFrame
 
 # Load data
-df = pd.read_csv("timeseries/INDEX_SUIUSD_1D.csv", sep = ",")[["time", "open", "high", "low", "close"]]
+df = pd.read_csv("timeseries/INDEX_ETHUSD_1D.csv", sep = ",")[["time", "open", "high", "low", "close"]]
 
 #STC NEEDS TO BE REwORKED
 #indi = seven.INDI7525(df)
@@ -38,9 +48,16 @@ df = pd.read_csv("timeseries/INDEX_SUIUSD_1D.csv", sep = ",")[["time", "open", "
 #indi = demaRsi.DemaRSIOverlay(df)
 #indi = lsmaatr.LSMAATR(df)
 #KAMU mozda najbolje preskocit
+#indi = vii.ISDDemaRSI(df)
+#indi = dst.DemaSupertrend(df)
+#indi = dssmasd.DoubleSrcSMASD(df)
+#indi = demasmasd.DemaSMASD(df)
+#indi = Indicators.ViiStop.ViiStop(df)
+#indi = Indicators.EWMA.Ewma(df)
+indi = Indicators.DSMA.dsma(df)
 
 start_time = time.time()  # Record the start time
-#indi.run_test()
+indi.run_test()
 end_time = time.time()    # Record the end time
 execution_time = end_time - start_time  # Calculate the duration
 hours, remainder = divmod(execution_time, 3600)  # Convert to hours and remaining seconds
