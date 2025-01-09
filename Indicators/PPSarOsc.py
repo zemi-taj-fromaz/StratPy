@@ -6,18 +6,18 @@ import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
 import pandas as pd
-class NormT3Osc:
+class PPSarOsc:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, length, vf, norm_period, malen):
+    def store_result(self,equity,  start, inc, maxx):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,  length, vf, norm_period, malen))
+        heapq.heappush(self.top_results, (equity,start, inc, maxx))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -35,36 +35,31 @@ class NormT3Osc:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(2, 21):
-            for vf in [x * 0.1 for x in range(-57, 57, 10)]:  # Step by 0.1
-                for norm_period in range(30, 70, 5):
-                    for malen in range(12, 28, 2):
-                        equity = self.calculate( length, vf, norm_period, malen)
-                        print(equity)
-                        self.store_result(equity, length, vf, norm_period, malen)
+        for start in range(5, 25):
+            for inc in range(1, 15):
+                for maxx in range(1, 15):
+                    equity = self.calculate(  start, inc, maxx)
+                    print(equity)
+                    self.store_result(equity,start, inc, maxx)
 
         self.print_top_results()
 
-    def calculate(self,    length, vf, norm_period, malen):
+    def calculate(self, start, inc, max):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
-
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["subject"] = self.timeseries.ta.t3(length=length, a = vf)
+        self.timeseries["hh"] =  self.timeseries["high"].rolling(window=k_period).max()
+        self.timeseries["ll"] =  self.timeseries["low"].rolling(window=k_period).min()
 
-        self.timeseries["lowest"] =  self.timeseries["subject"].rolling(window=norm_period).min()
-        self.timeseries["highest"] =  self.timeseries["subject"].rolling(window=norm_period).max()
+        self.timeseries["k"] = (self.timeseries["close"] - self.timeseries["ll"]) / (self.timeseries["hh"] - self.timeseries["ll"]) * 100
+        self.timeseries["d"] = self.timeseries.ta.sma(source = "k", length=d_period)
 
-        self.timeseries["plotosc"] = (self.timeseries["subject"] - self.timeseries["lowest"]) / (self.timeseries["highest"] - self.timeseries["lowest"]) - 0.5
+        self.timeseries['Long'] = ( self.timeseries["k"] > self.timeseries["d"]).astype(int)
+        self.timeseries['Short'] = ( self.timeseries["d"] < self.timeseries["k"]).astype(int)
 
-        self.timeseries["sig_ma"] = ta.sma(self.timeseries["plotosc"], length = malen)
-
-        self.timeseries['Long'] = ( self.timeseries["plotosc"] > 0).astype(int)
-        self.timeseries['Short'] = ( self.timeseries["plotosc"] < 0).astype(int)
-
-        for i in range(length, len(self.timeseries)):
+        for i in range(max(k_period,d_period), len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

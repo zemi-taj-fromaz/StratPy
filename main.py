@@ -29,6 +29,8 @@ import Indicators.DemaEmaCross
 import Indicators.DemaDMI
 import Indicators.DSMA
 import Indicators.EWMAOsc
+import Indicators.NormT3Osc
+import Indicators.NeutralStateStochOsc
 
 df = pd.DataFrame() # Empty DataFrame
 
@@ -56,7 +58,9 @@ df = pd.read_csv("timeseries/INDEX_ETHUSD_1D.csv", sep = ",")[["time", "open", "
 #indi = Indicators.ViiStop.ViiStop(df)
 #indi = Indicators.EWMA.Ewma(df)
 #indi = Indicators.DSMA.dsma(df)
-indi = Indicators.EWMAOsc.EwmaOsc(df)
+#indi = Indicators.EWMAOsc.EwmaOsc(df)
+#indi = Indicators.NormT3Osc.NormT3Osc(df)
+indi = Indicators.NeutralStateStochOsc.NSSTC(df)
 
 start_time = time.time()  # Record the start time
 indi.run_test()
