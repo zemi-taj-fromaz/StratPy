@@ -35,29 +35,27 @@ class PPSarOsc:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
+        inc = 0.001
         for start in range(5, 25):
-            for inc in range(1, 15):
-                for maxx in range(1, 15):
+            for inc in [x * 0.001 for x in range(1, 10, 1)]:  # Step by 0.1
+                for maxx in [x * 0.001 for x in range(1, 10, 1)]:  # Step by 0.1
                     equity = self.calculate(  start, inc, maxx)
                     print(equity)
                     self.store_result(equity,start, inc, maxx)
 
         self.print_top_results()
 
-    def calculate(self, start, inc, max):
+    def calculate(self, start, inc, maxx):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["hh"] =  self.timeseries["high"].rolling(window=k_period).max()
-        self.timeseries["ll"] =  self.timeseries["low"].rolling(window=k_period).min()
+        self.timeseries["sar"] = self.timeseries.ta.sar(start, inc, maxx)
+        self.timeseries["oscillator"] = self.timeseries["sar"] - self.timeseries["close"]
 
-        self.timeseries["k"] = (self.timeseries["close"] - self.timeseries["ll"]) / (self.timeseries["hh"] - self.timeseries["ll"]) * 100
-        self.timeseries["d"] = self.timeseries.ta.sma(source = "k", length=d_period)
-
-        self.timeseries['Long'] = ( self.timeseries["k"] > self.timeseries["d"]).astype(int)
-        self.timeseries['Short'] = ( self.timeseries["d"] < self.timeseries["k"]).astype(int)
+        self.timeseries['Long'] = (  self.timeseries["oscillator"] > 0).astype(int)
+        self.timeseries['Short'] = (  self.timeseries["oscillator"] < 0).astype(int)
 
         for i in range(max(k_period,d_period), len(self.timeseries)):
                 self.strategy.process(i)
