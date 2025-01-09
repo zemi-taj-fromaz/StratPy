@@ -6,18 +6,18 @@ import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
 import pandas as pd
-class EwmaOsc:
+class NormT3Osc:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, length, norm_period):
+    def store_result(self,equity, length, vf, norm_period, malen):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,  length, norm_period))
+        heapq.heappush(self.top_results, (equity,  length, vf, norm_period, malen))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -36,20 +36,23 @@ class EwmaOsc:
         Run the optimization test over the parameter ranges and store the results.
         """
         for length in range(7, 21):
-            for norm_period in range(30, 70):
-                equity = self.calculate( length, norm_period)
-                print(equity)
-                self.store_result(equity, length, norm_period)
+            for vf in range(30, 70):
+             for norm_period in range(30, 70):
+                for malen in range(30, 70):
+                    equity = self.calculate( length, norm_period)
+                    print(equity)
+                    self.store_result(equity, length, norm_period)
 
         self.print_top_results()
 
-    def calculate(self,   length, norm_period):
+    def calculate(self,    length, vf, norm_period, malen):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
-        alpha = 2 / (length + 1)
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
+
+        self.timeseries["subject"] = self.timeseries.ta.t3(length=length, a = vf)
 
         self.timeseries["ewma"] = self.timeseries["close"]
 
