@@ -11,25 +11,37 @@ class STC:
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
-        self.timeseries["time"] = pd.to_datetime(self.timeseries["time"])
-        self.timeseries.set_index("time", inplace=True)
 
-    def store_result(self, equity, demaLength, lookback, atrFactor):
-        heapq.heappush(self.top_results, (equity, demaLength, lookback, atrFactor))
+    def store_result(self, equity, sensitivity, length, fastLength, slowLength):
+        heapq.heappush(self.top_results, (equity, sensitivity, length, fastLength, slowLength))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
     def get_top_results(self):
         return sorted(self.top_results, key=lambda x: -x[0])
 
+    def print_top_results(self):
+        top_results = self.get_top_results()
+        print("Top Results:")
+        for result in top_results:
+            params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
+            print(", ".join(params))
+
     def run_test(self):
-        for demaLength in range(4,15):
-            for lookback in range(5,19):
-                for atrFactor in [x * 0.01 for x in range(110, 250, 2)]:  # Step by 0.1
-                    equity = self.calculate(demaLength, lookback, atrFactor)
-                    self.store_result(equity, demaLength, lookback, atrFactor)
+        for sensitivity in [x * 0.001 for x in range(335, 675, 30)]:  # Step by 0.1
+            for length in range(25,50, 2):
+                for fastLength in range(30,60, 2):
+                    for slowLength in  range(150,250, 10):  # Step by 0.1
+                        equity = self.calculate(sensitivity, length, fastLength, slowLength)
+                        print(equity)
+                        self.store_result(equity, sensitivity, length, fastLength, slowLength)
+        self.print_top_results()
+
 
     def calculate(self, sensitivity: float, length: int, fastLength : int, slowLength : int):
+        args = locals()  # returns a dictionary of all local variables
+        print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
+
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
         fast_ma = self.timeseries.ta.ema(length=fastLength, append=True)
@@ -40,44 +52,45 @@ class STC:
         trend_low = trend.rolling(window=length).min()
         trend_range = trend.rolling(window=length).max() - trend_low
 
-        # Initialize arrays for schaff_value, schaff_ma, pf_ma, and pf
-        schaff_value = pd.Series(0, index=self.timeseries.index)
-        schaff_ma = pd.Series(0, index=self.timeseries.index)
-        pf_ma = pd.Series(0, index=self.timeseries.index)
-        pf = pd.Series(0, index=self.timeseries.index)
+        schaffValue = np.full_like(trend, np.nan, dtype=float)
+        schaffMA = np.full_like(trend, np.nan, dtype=float)
 
-        uptrend = False
-        downtrend = False
-        # Iterative calculation
+        for i in range(slowLength, len(trend)):
+            if(trend_range[i] > 0):
+                schaffValue[i] = (trend[i] - trend_low[i]) / trend_range[i] * 100
+            else:
+                schaffValue[i] = schaffValue[i - 1] if np.isnan(schaffValue[i - 1]) else 0
+
+            schaffMA[i] = schaffValue[i] if np.isnan(schaffMA[i - 1]) else schaffMA[i-1] + sensitivity * (schaffValue[i] - schaffMA[i-1])
+
+        schaffMASeries = pd.Series(schaffMA)
+
+        # Apply rolling operations
+        schaffMaLow = schaffMASeries.rolling(window=length).min()
+        schaffMaRange = schaffMASeries.rolling(window=length).max() - schaffMaLow
+
+        pfMA = np.full_like(trend, np.nan, dtype=float)
+        pf = np.full_like(trend, np.nan, dtype=float)
+
+
+        for i in range(slowLength, len(trend)):
+            if(schaffMaRange[i] > 0):
+                pfMA[i] = (schaffMA[i] - schaffMaLow[i]) / schaffMaRange[i] * 100
+            else:
+                pfMA[i] = pfMA[i - 1] if np.isnan(pfMA[i - 1]) else 0
+
+            pf[i] = pfMA[i] if np.isnan(pf[i - 1]) else pf[i-1] + sensitivity * (pfMA[i-1] - pf[i-1])
+
+
+
         for i in range(slowLength, len(self.timeseries)):
             self.strategy.process(i)
-            if trend_range.iloc[i] > 0:
-                schaff_value.iloc[i] = (trend.iloc[i] - trend_low.iloc[i]) / trend_range.iloc[i] * 100
-            else:
-                schaff_value.iloc[i] = schaff_value.iloc[i - 1] if i > 0 else 0
-
-            schaff_ma.iloc[i] = schaff_value.iloc[i] if i == 0 else schaff_ma.iloc[i - 1] + sensitivity * (schaff_value.iloc[i] - schaff_ma.iloc[i - 1])
-
-            schaff_ma_low = schaff_ma[:i + 1].rolling(window=length).min().iloc[-1]
-            schaff_ma_range = schaff_ma[:i + 1].rolling(window=length).max().iloc[-1] - schaff_ma_low
-
-            if schaff_ma_range > 0:
-                pf_ma.iloc[i] = (schaff_ma.iloc[i] - schaff_ma_low) / schaff_ma_range * 100
-            else:
-                pf_ma.iloc[i] = pf_ma.iloc[i - 1] if i > 0 else 0
-
-            pf.iloc[i] = pf_ma.iloc[i] if i == 0 else pf.iloc[i - 1] + sensitivity * (pf_ma.iloc[i] - pf.iloc[i - 1])
 
             if(pf[i] >= pf[i-1]):
                 self.strategy.entry("long", i)
             else:
                 self.strategy.entry("short", i)
-        # if(pf[i] >= 25 and pf[i-1] < 25 and not uptrend or pf[i] >= 75 and pf[i] < 75 and downtrend):
-           #     uptrend = True
-           #     downtrend = False
-           # if (pf[i] < 75 and pf[i - 1] >= 75 and not downtrend or pf[i] < 25 and pf[i] >= 25 and uptrend):
-           #     uptrend = False
-           #     downtrend = True
+
 
         return self.strategy.equity
 

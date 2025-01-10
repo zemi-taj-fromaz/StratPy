@@ -1,5 +1,5 @@
 import pandas as pd
-import pandas_ta as ta
+#import pandas_ta as ta
 import time
 
 import Indicators.DemaATR as datr
@@ -60,7 +60,8 @@ df = pd.read_csv("timeseries/INDEX_ETHUSD_1D.csv", sep = ",")[["time", "open", "
 #indi = Indicators.DSMA.dsma(df)
 #indi = Indicators.EWMAOsc.EwmaOsc(df)
 #indi = Indicators.NormT3Osc.NormT3Osc(df)
-indi = Indicators.NeutralStateStochOsc.NSSTC(df)
+#indi = Indicators.NeutralStateStochOsc.NSSTC(df)
+indi = Indicators.STC.STC(df)
 
 start_time = time.time()  # Record the start time
 indi.run_test()
