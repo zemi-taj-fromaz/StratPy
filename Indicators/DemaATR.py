@@ -27,22 +27,23 @@ class DemaATR:
 
     def run_test(self):
 
-        for demaLength in range(1,9):
-            for lookback in range(11,17):
-                for atrFactor in [x * 0.01 for x in range(120, 200, 2)]:  # Step by 0.1
+        for demaLength in range(2,13):
+            for lookback in range(2,10):
+                for atrFactor in [x * 0.01 for x in range(100, 150, 2)]:  # Step by 0.1
                     equity = self.calculate(demaLength, lookback, atrFactor)
                     print(equity)
                     self.store_result(equity, demaLength, lookback, atrFactor)
         self.print_top_results()
 
     def calculate(self, demaLength: int, lookback: int, atrFactor: float = 1.0):
-        print("Calculating for : " + str(demaLength) + "," + str(lookback) + "," + str(atrFactor))
+        args = locals()  # returns a dictionary of all local variables
+        print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.timeseries.ta.atr(length= lookback, append=True)
         self.timeseries.ta.dema(length = demaLength, append = True)
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        demaOut = self.timeseries["DEMA_" + str(demaLength)].copy()
-        trueRange = atrFactor * self.timeseries["ATRr_" + str(lookback)]
+        demaOut = self.timeseries.ta.dema(length = demaLength)
+        trueRange = atrFactor *   self.timeseries.ta.atr(length= lookback)
 
         for i in range(demaLength,len(demaOut)):
                 self.strategy.process(i)

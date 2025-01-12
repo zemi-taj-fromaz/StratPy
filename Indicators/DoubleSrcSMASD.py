@@ -32,8 +32,8 @@ class DoubleSrcSMASD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for len_ma in range(40, 80):
-            for len_sd in range(10, 35):
+        for len_ma in range(20, 70):
+            for len_sd in range(5, 30):
                 equity = self.calculate(len_ma, len_sd)
                 print(equity)
                 self.store_result(equity,len_ma, len_sd)
@@ -45,12 +45,11 @@ class DoubleSrcSMASD:
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
-        self.timeseries['hl2'] = (self.timeseries['high'] + self.timeseries['low']) / 2
-        src_ma = self.timeseries['hl2']
-        self.timeseries['src'] = (src_ma + src_ma.shift(1)) / 2
+        src_ma = (self.timeseries['high'] + self.timeseries['low']) / 2
+        src = (src_ma + src_ma.shift(1)) / 2
 
         # Calculate the highest low over h_length periods and multiply by h_multi
-        self.timeseries["sma"] = ta.sma(self.timeseries["src"], len_ma)
+        self.timeseries["sma"] = ta.sma(src, len_ma)
 
         self.timeseries["sd"] = self.timeseries["sma"].rolling(window = len_sd).std()
 

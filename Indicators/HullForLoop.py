@@ -3,18 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-class MedianSD:
+class HullForLoop:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self, equity, median_len, atr_len, atr_mul, sd_len):
+    def store_result(self, equity, length, start, end, thresholdL, thresholdS):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,median_len, atr_len, atr_mul, sd_len))
+        heapq.heappush(self.top_results, (equity, length, start, end, thresholdL, thresholdS))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -28,45 +28,35 @@ class MedianSD:
         for result in top_results:
             params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
             print(", ".join(params))
+
     def run_test(self):
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for median_len in range(36, 47):
-            for atr_len in range(6, 14):
-                for atr_mul in [x * 0.1 for x in range(3, 9, 1)]:  # Step by 0.1
-                    for sd_len in range(20, 31):
-                        equity = self.calculate( median_len, atr_len, atr_mul, sd_len)
-                        print(equity)
-                        self.store_result(equity,  median_len, atr_len, atr_mul, sd_len)
+        for length in range(22, 180):
+            equity = self.calculate(length)
+            print(equity)
+            self.store_result(equity, length)
 
         self.print_top_results()
 
-    def calculate(self, median_len, atr_len, atr_mul, sd_len) :
+
+    def calculate(self, length):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries['median'] = self.timeseries["close"].rolling(window=median_len).quantile(0.5)
-        self.timeseries['ATR'] = self.timeseries.ta.atr(length=atr_len) * atr_mul
-        # Entry confirmation source
+        # Calculate DEMA
+        alma = self.timeseries.ta.alma(length=length)
 
-        self.timeseries['u'] =self.timeseries['median']+ self.timeseries['ATR']
-        self.timeseries['l'] = self.timeseries['median'] - self.timeseries['ATR']
+        almal= alma > alma.shift(1) and self.timeseries["close"] > alma
+        almas = alma < alma.shit(1) and self.timeseries["close"] < alma
 
-        self.timeseries['sd'] = self.timeseries["median"].rolling(window=sd_len).std()
-        self.timeseries['sdd'] = self.timeseries['median'] + self.timeseries['sd']
-        self.timeseries['sdl'] = self.timeseries['median'] - self.timeseries['sd']
+       # Long and Short Conditions
+        self.timeseries['Long'] = (almal).astype(int)
+        self.timeseries['Short'] = (almas).astype(int)
 
-
-        # Crossover and Crossunder Logic
-        self.timeseries['Long'] = ((self.timeseries['close'] > self.timeseries['l']) & (
-                    self.timeseries['close'] >= self.timeseries['sdd'])).astype(int)
-        self.timeseries['Short'] = (self.timeseries['close'] < self.timeseries['u']).astype(int)
-
-
-
-        for i in range(median_len, len(self.timeseries['close'])):
+        for i in range(len(self.timeseries['Long'])):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):
@@ -76,7 +66,6 @@ class MedianSD:
                 if(self.timeseries['Long'][i]):
                     self.strategy.entry("long", i)
                     continue
-
 
      #   self.strategy.printMetrics()
         return self.strategy.equity

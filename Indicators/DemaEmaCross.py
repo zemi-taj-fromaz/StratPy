@@ -33,9 +33,9 @@ class DemaEmaCross:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for len_dema in range(19, 32):
-            for len1st in range(16, 28):
-                for len2nd in range(20, 28):
+        for len_dema in range(15, 32):
+            for len1st in range(12, 20):
+                for len2nd in range(12, 22):
                     equity = self.calculate( len_dema, len1st, len2nd)
                     print(equity)
                     self.store_result(equity, len_dema, len1st, len2nd)

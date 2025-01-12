@@ -35,10 +35,9 @@ class PPSarOsc:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        inc = 0.001
-        for start in range(5, 25):
+        for start in [x * 0.01 for x in range(1, 10, 1)]:  # Step by 0.1
             for inc in [x * 0.001 for x in range(1, 10, 1)]:  # Step by 0.1
-                for maxx in [x * 0.001 for x in range(1, 10, 1)]:  # Step by 0.1
+                for maxx in [x * 0.1 for x in range(1, 10, 1)]:  # Step by 0.1
                     equity = self.calculate(  start, inc, maxx)
                     print(equity)
                     self.store_result(equity,start, inc, maxx)
@@ -51,13 +50,14 @@ class PPSarOsc:
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["sar"] = self.timeseries.ta.sar(start, inc, maxx)
+        print(self.timeseries.ta.psar(start, inc, maxx))
+        self.timeseries["sar"] = self.timeseries.ta.psar(start, inc, maxx)
         self.timeseries["oscillator"] = self.timeseries["sar"] - self.timeseries["close"]
 
         self.timeseries['Long'] = (  self.timeseries["oscillator"] > 0).astype(int)
         self.timeseries['Short'] = (  self.timeseries["oscillator"] < 0).astype(int)
 
-        for i in range(max(k_period,d_period), len(self.timeseries)):
+        for i in range(20, len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

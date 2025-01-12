@@ -1,5 +1,5 @@
 import pandas as pd
-#import pandas_ta as ta
+import pandas_ta as ta
 import time
 
 import Indicators.DemaATR as datr
@@ -31,11 +31,21 @@ import Indicators.DSMA
 import Indicators.EWMAOsc
 import Indicators.NormT3Osc
 import Indicators.NeutralStateStochOsc
+import Indicators.PPSarOsc
+import Indicators.MomentumZenithGuide
+import Indicators.FourMACD
+import Indicators.DynamicMedianEMA
+import Indicators.AlmaLag
+import Indicators.MedianSupertrend
+import Indicators.NeutralStateBollingerBands
+import Indicators.NeutralStateMACD
+import Indicators.RsiSD
+import Indicators.DemaAFR
 
 df = pd.DataFrame() # Empty DataFrame
 
 # Load data
-df = pd.read_csv("timeseries/INDEX_ETHUSD_1D.csv", sep = ",")[["time", "open", "high", "low", "close"]]
+df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high", "low", "close"]]
 
 #STC NEEDS TO BE REwORKED
 #indi = seven.INDI7525(df)
@@ -48,20 +58,33 @@ df = pd.read_csv("timeseries/INDEX_ETHUSD_1D.csv", sep = ",")[["time", "open", "
 #indi = cstd.CasperSupertrend(df)
 ##indi = jordoema.EMA(df) -> Ovo ponovi, nisam siguran ni da je skroz dobro uopce
 #indi = datr.DemaATR(df)
+#indi = inid.dynamicMedianEma.DynamicMedianEma(df)
+#indi = inid.dynamicMedianEma.DynamicMedianEma(df, sd)
 #indi = demaRsi.DemaRSIOverlay(df)
 #indi = lsmaatr.LSMAATR(df)
 #KAMU mozda najbolje preskocit
 #indi = vii.ISDDemaRSI(df)
+#indi = Indicators.AlmaLag.AlmaLag(df)
 #indi = dst.DemaSupertrend(df)
 #indi = dssmasd.DoubleSrcSMASD(df)
 #indi = demasmasd.DemaSMASD(df)
 #indi = Indicators.ViiStop.ViiStop(df)
 #indi = Indicators.EWMA.Ewma(df)
+#indi = Indicators.MedianSupertrend.MedianSupertrend(df)
 #indi = Indicators.DSMA.dsma(df)
 #indi = Indicators.EWMAOsc.EwmaOsc(df)
 #indi = Indicators.NormT3Osc.NormT3Osc(df)
 #indi = Indicators.NeutralStateStochOsc.NSSTC(df)
-indi = Indicators.STC.STC(df)
+#indi = Indicators.PPSarOsc.PPSarOsc(df)  - useless as well
+#indi = Indicators.Indicators.FourMACD.Zenith(df) #VOLUME DATA NOT AVAIL - useless _TODO TOMOOROWO
+#indi = Indicators.FourMACD useless as fuck nazalost
+#indi = Indicators.DemaEmaCross.DemaEmaCross(df)
+#indi = Indicators.DemaDMI.DemaDMI(df)
+#indi = Indicators.DemaSupertrend.DemaSupertrend(df)
+#indi = Indicators.NeutralStateBollingerBands.NSBB(df)
+#indi = Indicators.NeutralStateMACD.NSMacD(df)
+#indi = Indicators.RsiSD.RsiSD(df)
+indi = Indicators.DemaAFR.DemaAFR(df)
 
 start_time = time.time()  # Record the start time
 indi.run_test()

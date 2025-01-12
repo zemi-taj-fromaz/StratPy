@@ -92,15 +92,45 @@ class DemaDMI:
                                            np.abs(self.timeseries['high'] - self.timeseries['close_prev']),
                                            np.abs(self.timeseries['low'] - self.timeseries['close_prev']))
 
-        p = np.where(u > d, np.where(u > 0, u, 0), 0)
-        m = np.where(d > u, np.where(d > 0, d, 0), 0)
-
+        print(u.isnull())
+        print(d.isnull())
+        print(u)
+        p = np.where(
+            u.isna(),
+            np.nan,  # Assign NaN if 'u' is NaN
+            np.where(
+                (u > d) & (u > 0),
+                u,  # Assign 'u' if conditions are met
+                0  # Otherwise, assign 0
+            )
+        )
+        m = np.where(
+            d.isna(),
+            np.nan,  # Assign NaN if 'd' is NaN
+            np.where(
+                (d > u) & (d > 0),
+                d,  # Assign 'd' if conditions are met
+                0  # Otherwise, assign 0
+            )
+        )
         # True range and smoothing of ADX
         t = ta.rma(self.timeseries["tr"], dmilen)
-        plus = 100 * np.nan_to_num( ta.rma(p, dmilen) ) / t
-        minus = 100 * np.nan_to_num( ta.rma(m, dmilen) ) / t
+
+        prma = ta.rma(p, dmilen)
+        mrma = ta.rma(m, dmilen)
+        plus = np.where(
+            prma.isnan(),
+            np.nan,  # Assign NaN if 'd' is NaN
+            100 * prma / t
+        )
+        minus = np.where(
+            mrma.isnan(),
+            np.nan,  # Assign NaN if 'd' is NaN
+            100 * mrma / t
+        )
         sum_ = plus + minus
-        adx = 100 * ta.rma(np.abs(plus - minus) / np.where(sum_ == 0, 1, sum_), adxlen)
+        zerosum = 1 if sum_ == 0 else sum_
+        adx = 100 * ta.rma(np.abs(plus - minus) / zerosum, adxlen)
 
         # Determine trend direction based on ADX
         x = adx > adx.shift(1)

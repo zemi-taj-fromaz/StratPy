@@ -3,18 +3,23 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-class DemaSMASD:
+import math
+
+
+## PRESKOCI OVO ZASAD; IMA POSLA OKO OTKRIVANJA ZAJEBANCIJE SA THRESHOLDOM ALI TO ZA NEKI DRUGI PUT
+
+class NSMacD:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, len_dema, len_ma, len_sd):
+    def store_result(self, equity, fast_length, slow_length, signal_smoothing,neutral_zone_threshold ):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity, len_dema, len_ma, len_sd))
+        heapq.heappush(self.top_results, (equity, fast_length, slow_length, signal_smoothing,neutral_zone_threshold))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -32,51 +37,44 @@ class DemaSMASD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for len_dema in range(1, 10):
-            for len_ma in range(30, 50):
-                for len_sd in range(2, 15):
-                    equity = self.calculate(len_dema, len_ma, len_sd)
-                    print(equity)
-                    self.store_result(equity,len_dema, len_ma, len_sd)
+        for fast_length in range(3, 22):
+            for slow_length in range(max(12, fast_length + 1), 38):
+                for signal_smoothing in range(3, 15):
+                    for neutral_zone_threshold in range(100, 200, 5):
+                        equity = self.calculate(  fast_length, slow_length, signal_smoothing,neutral_zone_threshold)
+                        print(equity)
+                        self.store_result(equity,  fast_length, slow_length, signal_smoothing,neutral_zone_threshold)
 
         self.print_top_results()
 
-    def calculate(self,  len_dema, len_ma, len_sd):
+    def calculate(self, fast_length, slow_length, signal_smoothing,neutral_zone_threshold) :
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
-
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
-        self.timeseries['hl2'] = (self.timeseries['high'] + self.timeseries['low']) / 2
 
-        # Calculate the highest low over h_length periods and multiply by h_multi
-        self.timeseries["dema"] = ta.dema(self.timeseries["hl2"], len_dema)
-        self.timeseries["sma"] = ta.sma(self.timeseries["dema"],  len_ma)
-        self.timeseries["sd"] = self.timeseries["sma"].rolling(window = len_sd).std()
+        macd_df = self.timeseries.ta.macd(fast_length, slow_length, signal_smoothing)
+        macd_line = macd_df.iloc[:, 0]  # First column
+        signal_line = macd_df.iloc[:, 1]  # Third column
+        macd_signal_diff = macd_line - signal_line
 
+        is_neutral = np.abs(macd_signal_diff) < neutral_zone_threshold
 
-        self.timeseries['u'] = self.timeseries['sma'] + self.timeseries['sd']
-        self.timeseries['l'] = self.timeseries['sma'] - self.timeseries['sd']
-
-
-        # Long and Short Conditions
-        self.timeseries['Long'] = (self.timeseries['high'] >  self.timeseries['l'])
-        self.timeseries['Short'] = (self.timeseries['low'] <  self.timeseries['u'])
-
-
-
-        for i in range(len_ma, len(self.timeseries)):
+        for i in range(slow_length, len(self.timeseries['close'])):
                 self.strategy.process(i)
 
-                if(self.timeseries['Short'][i]):
+                if(is_neutral[i]):
+                    print("Neutral state- " + str(macd_signal_diff[i]))
+                    continue
+
+                if(macd_line[i] < signal_line[i]):
                     self.strategy.entry("short", i)
                     continue
 
-                if(self.timeseries['Long'][i]):
+                if(macd_line[i] > signal_line[i]):
                     self.strategy.entry("long", i)
                     continue
 
-
-     #   self.strategy.printMetrics()
+        #   self.strategy.printMetrics()
         return self.strategy.equity
 
         # Simplified example: double the value of each item in the series

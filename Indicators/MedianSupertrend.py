@@ -3,19 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-import pandas as pd
-class CasperSupertrend:
+class MedianSupertrend:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self, equity, lengthPeriod, factor, medianLength):
+    def store_result(self, equity, supertrend_len, multiplier, median_len):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity, lengthPeriod, factor, medianLength))
+        heapq.heappush(self.top_results, (equity, supertrend_len, multiplier, median_len))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -33,35 +32,32 @@ class CasperSupertrend:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for lengthPeriod in range(2, 12):
-            for factor in [x * 0.01 for x in range(180, 230, 5)]:  # Step by 0  .1
-                for medianLength in range(4, 15):
-                    equity = self.calculate(lengthPeriod, factor, medianLength)
-                    print(equity)
-                    self.store_result(equity, lengthPeriod, factor, medianLength)
+        for supertrend_len in range(2, 13):
+                for multiplier in [x * 0.01 for x in range(110, 220, 5)]:  # Step by 0.1
+                    for median_len in range(5, 16):
+                        equity = self.calculate( supertrend_len, multiplier, median_len)
+                        print(equity)
+                        self.store_result(equity, supertrend_len, multiplier, median_len)
 
         self.print_top_results()
 
-    def calculate(self,   lengthPeriod, factor, medianLength):
+    def calculate(self, supertrend_len, multiplier, median_len) :
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        # Calculate the highest low over h_length periods and multiply by h_multi
-        source = self.timeseries['close'].rolling(window=medianLength).quantile(0.5)
+        smooth = self.timeseries["close"].rolling(window=median_len).quantile(0.5)
 
-        volatility = self.timeseries.ta.atr(length = lengthPeriod)
+        atr = self.timeseries.ta.atr(length=supertrend_len) * multiplier
+        u = smooth + atr
+        l = smooth - atr
 
-        u = source + factor * volatility
-        l = source - factor * volatility
-
-        trend = None
-        previousTrend = None
+        st = None
+        pt = None
         d = 0
-        for i in range(max(lengthPeriod, medianLength), len(self.timeseries['close'])):
+        for i in range(median_len, len(self.timeseries['close'])):
                 self.strategy.process(i)
-                previousTrend = trend
-
+                pt = st
                 if(l[i] > l[i-1] or self.timeseries["close"][i-1] < l[i - 1]):
                     l[i] = l[i]
                 else:
@@ -72,9 +68,9 @@ class CasperSupertrend:
                 else:
                     u[i] = u[i - 1]
 
-                if(volatility[i -1] is None):
+                if(atr[i -1] is None):
                     d = 1
-                elif(previousTrend is not None and previousTrend == u[i -1]):
+                elif(pt is not None and pt == u[i -1]):
                     d = -1 if self.timeseries["close"][i] > u[i] else 1
                 else:
                     d = 1 if self.timeseries["close"][i] < l[i] else -1

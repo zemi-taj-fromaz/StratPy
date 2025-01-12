@@ -33,10 +33,10 @@ class DemaRSIOverlay:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for demaLength in range(36, 48):
-            for rsi_length in range(12, 18):
-                for long_threshold in range(60, 70):
-                    for short_threshold in range(37, 50):
+        for demaLength in range(22, 32):
+            for rsi_length in range(8, 12):
+                for long_threshold in range(57, 62):
+                    for short_threshold in range(28, 41):
                         equity = self.calculate(demaLength, rsi_length, long_threshold, short_threshold)
                         print(equity)
                         self.store_result(equity, demaLength, rsi_length, long_threshold, short_threshold)
@@ -45,7 +45,8 @@ class DemaRSIOverlay:
 
 
     def calculate(self, dema_length: int, rsi_length: int, long_threshold: float, short_threshold: float):
-        print(f"Calculating for: dema_length={dema_length}, rsi_length={rsi_length}, long_threshold={long_threshold}, short_threshold={short_threshold}")
+        args = locals()  # returns a dictionary of all local variables
+        print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
         # Calculate DEMA

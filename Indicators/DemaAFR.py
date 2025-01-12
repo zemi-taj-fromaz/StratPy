@@ -3,21 +3,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-class dsma:
+
+## NISAM SIGURSAN JESAM OVO DOOBRO ISPORGRASMIRAO
+
+class DemaAFR:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, len_sma, len_dsma):
-        """
-        Store the result in the heap, keeping only the top 10 results.
-        """
-        heapq.heappush(self.top_results, (equity,len_sma, len_dsma))
+    def store_result(self, equity, demaLength, lookback, atrFactor):
+        heapq.heappush(self.top_results, (equity, demaLength, lookback, atrFactor))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
-
 
     def get_top_results(self):
         return sorted(self.top_results, key=lambda x: -x[0])
@@ -28,44 +27,45 @@ class dsma:
         for result in top_results:
             params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
             print(", ".join(params))
-    def run_test(self):
-        """
-        Run the optimization test over the parameter ranges and store the results.
-        """
-        for len_sma in range(20, 50):
-            for len_dsma in range(1, 17):
-                    equity = self.calculate(len_sma, len_dsma)
-                    print(equity)
-                    self.store_result(equity,len_sma, len_dsma  )
 
+    def run_test(self):
+
+        for demaLength in range(2,19):
+            for lookback in range(2,19):
+                for atrFactor in [x * 0.1 for x in range(5, 35, 1)]:  # Step by 0.1
+                    equity = self.calculate(demaLength, lookback, atrFactor)
+                    print(equity)
+                    self.store_result(equity, demaLength, lookback, atrFactor)
         self.print_top_results()
 
-    def calculate(self,  len_sma, len_dsma):
+    def calculate(self, demaLength: int, lookback: int, atrFactor: float = 1.0):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
-
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["sma"] = ta.sma(self.timeseries["high"], length= len_sma)
-        self.timeseries["dsma"] = ta.sma(self.timeseries["sma"], length= len_dsma)
+        atr_afr = self.timeseries.ta.atr(length= lookback)
+        dema = self.timeseries.ta.dema(length = demaLength)
+        e = atr_afr * atrFactor
 
+        afr = dema
+        afr = afr.shift(1)
 
-        # Long and Short Conditions
-        self.timeseries['Long'] = (self.timeseries['high'] >  self.timeseries['dsma']).astype(int)
-        self.timeseries['Short'] = (self.timeseries['low'] <  self.timeseries['dsma']).astype(int)
+        atr_factoryHigh = dema + e
+        atr_factoryLow = dema - e
 
-
-
-        for i in range(len_sma, len(self.timeseries)):
+        for i in range(max(demaLength, lookback),len(self.timeseries["close"])):
                 self.strategy.process(i)
 
-                if(self.timeseries['Short'][i]):
-                    self.strategy.entry("short", i)
-                    continue
+                if (atr_factoryLow[i] > afr[i]):
+                    afr[i] = atr_factoryLow[i]
+                if (atr_factoryHigh[i] < afr[i]) :
+                    afr[i] = atr_factoryHigh[i]
 
-                if(self.timeseries['Long'][i]):
+                if(afr[i] < afr[i-1] and afr[i - 1] >= afr[i - 2]):
+                    self.strategy.entry("short", i)
+
+                if(afr[i] > afr[i-1] and afr[i - 1] <= afr[i - 2]):
                     self.strategy.entry("long", i)
-                    continue
 
 
      #   self.strategy.printMetrics()

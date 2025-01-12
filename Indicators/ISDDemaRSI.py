@@ -32,11 +32,11 @@ class ISDDemaRSI:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for sublen in range(26, 33):
-            for sublen_2 in range(25, 32):
-                for lenx in range(10, 18):
-                    for Threshold_L in range(60, 80):  # Step by 0.1
-                        for Threshold_S in range(40, 70):  # Step by 0.1
+        for sublen in range(27, 35):
+            for sublen_2 in range(17, 25):
+                for lenx in range(6, 11):
+                    for Threshold_L in range(50, 70, 5):  # Step by 0.1
+                        for Threshold_S in range(20,36, 5):  # Step by 0.1
                             equity = self.calculate(sublen, sublen_2, lenx, Threshold_L, Threshold_S)
                             print(equity)
                             self.store_result(equity, sublen, sublen_2, lenx, Threshold_L, Threshold_S)
