@@ -5,18 +5,20 @@ import CobraMetrics.Strategy as cobra
 import heapq
 import math
 
-class RSIZScore:
+
+## OV O JE presporo i pretesko za nakodirat, lakse ga je rucno testirat
+class ImpulsiveMomentum:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, rsilen, thresholdL, thresholdS):
+    def store_result(self,equity, Lu, Su, mult,emalen, momentum):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity, rsilen, thresholdL, thresholdS))
+        heapq.heappush(self.top_results, (equity,lenBB, multiplier))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -34,33 +36,29 @@ class RSIZScore:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for rsilen in range(1, 15):
-            for thresholdL in [x * 0.01 for x in range(55, 95, 2)]:  # Step by 0.1
-                for thresholdS in [x * 0.01 for x in range(-190, -90, 2)]:  # Step by 0.1
-                    equity = self.calculate(rsilen, thresholdL, thresholdS)
-                    print(equity)
-                    self.store_result(equity,rsilen, thresholdL, thresholdS)
+        for lenBB in range(11, 32):
+            for multiplier in [x * 0.1 for x in range(1, 23, 1)]:  # Step by 0  .1
+                equity = self.calculate(lenBB, multiplier)
+                print(equity)
+                self.store_result(equity,lenBB, multiplier)
         self.print_top_results()
 
-    def calculate(self, rsilen, thresholdL, thresholdS):
+    def calculate(self, lenBB, multiplier):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        src = (self.timeseries["close"] + self.timeseries["open"] + self.timeseries["low"] + self.timeseries["high"]) / 4
+        basis = self.timeseries["close"].ta.sma(lenBB)
+        dev = multiplier * self.timeseries["close"].rolling(window=lenBB).std()
+        upper = basis + dev
+        lower = basis - dev
 
-        rsi = src.ta.rsi(rsilen)
-        rsiMean = rsi.ta.sma(rsilen)
 
-        rsiSD = rsi.rolling(window=rsilen).std()
-        zScore = (rsi - rsiMean) / rsiSD
+        self.timeseries['Long'] = ( self.timeseries["low"] < upper).astype(int)
+        self.timeseries['Short'] = ( self.timeseries["high"] > lower).astype(int)
 
-        # Long and Short Conditions
-        self.timeseries['Long'] = ( zScore > thresholdL).astype(int)
-        self.timeseries['Short'] = ( zScore < thresholdS).astype(int)
-
-        for i in range(rsilen, len(self.timeseries)):
+        for i in range(lenBB, len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

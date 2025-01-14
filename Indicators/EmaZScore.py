@@ -4,19 +4,18 @@ import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
 import math
-
-class RSIZScore:
+class EmaZScore:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, rsilen, thresholdL, thresholdS):
+    def store_result(self,equity, emalen, lookback, thresholdL, thresholdS):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity, rsilen, thresholdL, thresholdS))
+        heapq.heappush(self.top_results, (equity, emalen, lookback, thresholdL, thresholdS))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -34,33 +33,31 @@ class RSIZScore:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for rsilen in range(1, 15):
-            for thresholdL in [x * 0.01 for x in range(55, 95, 2)]:  # Step by 0.1
-                for thresholdS in [x * 0.01 for x in range(-190, -90, 2)]:  # Step by 0.1
-                    equity = self.calculate(rsilen, thresholdL, thresholdS)
-                    print(equity)
-                    self.store_result(equity,rsilen, thresholdL, thresholdS)
+        for emalen in range(11, 32):
+            for lookback in range(19, 145):
+                for thresholdL in [x * 0.1 for x in range(5, 30, 5)]:  # Step by 0.1
+                    for thresholdS in [x * 0.1 for x in range(-15, 5, 5)]:  # Step by 0.1
+                        equity = self.calculate(emalen, lookback, thresholdL, thresholdS)
+                        print(equity)
+                        self.store_result(equity,emalen, lookback, thresholdL, thresholdS)
         self.print_top_results()
 
-    def calculate(self, rsilen, thresholdL, thresholdS):
+    def calculate(self, emalen, lookback, thresholdL, thresholdS):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        src = (self.timeseries["close"] + self.timeseries["open"] + self.timeseries["low"] + self.timeseries["high"]) / 4
+        ema = self.timeseries.ta.ema(emalen)
+        mean = ema.ta.ema(lookback)
 
-        rsi = src.ta.rsi(rsilen)
-        rsiMean = rsi.ta.sma(rsilen)
+        stdDev = ema.rolling(window = lookback).std()
+        zScore = (ema - mean) / stdDev
 
-        rsiSD = rsi.rolling(window=rsilen).std()
-        zScore = (rsi - rsiMean) / rsiSD
-
-        # Long and Short Conditions
         self.timeseries['Long'] = ( zScore > thresholdL).astype(int)
         self.timeseries['Short'] = ( zScore < thresholdS).astype(int)
 
-        for i in range(rsilen, len(self.timeseries)):
+        for i in range(max(emalen, lookback), len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

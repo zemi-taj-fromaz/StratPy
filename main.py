@@ -41,6 +41,8 @@ import Indicators.NeutralStateBollingerBands
 import Indicators.NeutralStateMACD
 import Indicators.RsiSD
 import Indicators.DemaAFR
+import Indicators.HullForLoopRocheur
+import Indicators.EnhancedKijunSenBase
 
 df = pd.DataFrame() # Empty DataFrame
 
@@ -84,7 +86,10 @@ df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high",
 #indi = Indicators.NeutralStateBollingerBands.NSBB(df)
 #indi = Indicators.NeutralStateMACD.NSMacD(df)
 #indi = Indicators.RsiSD.RsiSD(df)
-indi = Indicators.DemaAFR.DemaAFR(df)
+#indi = Indicators.DemaAFR.DemaAFR(df)
+#indi = Indicators.HullForLoopRocheur.HullForLoop(df)
+#indi = Indicators.EnhancedKijunSenBase.EnhancedKijunSenBase(df)
+indi = stc.STC(df)
 
 start_time = time.time()  # Record the start time
 indi.run_test()

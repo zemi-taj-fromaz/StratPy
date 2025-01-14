@@ -3,18 +3,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-class HullForLoop:
+class SalmaRedK:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self, equity, length, start, end, thresholdL, thresholdS):
+    def store_result(self, equity, length, smooth, mult, sdlen):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity, length, start, end, thresholdL, thresholdS))
+        heapq.heappush(self.top_results, (equity,length, smooth, mult, sdlen))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -28,35 +28,49 @@ class HullForLoop:
         for result in top_results:
             params = [f"Equity: {result[0]}"] + [f"Param-{i + 1}: {param}" for i, param in enumerate(result[1:])]
             print(", ".join(params))
-
     def run_test(self):
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(22, 180):
-            equity = self.calculate(length)
-            print(equity)
-            self.store_result(equity, length)
+        for length in range(12, 44):
+            for smooth in range(19, 58):
+                for mult in [x * 0.01 for x in range(55, 95, 2)]:  # Step by 0.1
+                    for sdlen in range(19, 58):
+                        equity = self.calculate(  length, smooth, mult, sdlen)
+                        print(equity)
+                        self.store_result(equity,  length, smooth, mult, sdlen)
 
         self.print_top_results()
 
-
-    def calculate(self, length):
+    def calculate(self,length, smooth, mult, sdlen) :
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        # Calculate DEMA
-        alma = self.timeseries.ta.alma(length=length)
+        baseline = self.timeseries["close"].ta.wma(sdlen)
+        dev = mult * self.timeseries["close"].rolling(window=sdlen).std()
+        upper = baseline + dev
+        lower = baseline - dev
 
-        almal= alma > alma.shift(1) and self.timeseries["close"] > alma
-        almas = alma < alma.shit(1) and self.timeseries["close"] < alma
+        cprice = np.where(
+            self.timeseries["close"] > upper,
+            upper,
+            np.where(
+                self.timeseries["close"] < lower,
+                lower,
+                self.timeseries["close"]
+            )
+        )
 
-       # Long and Short Conditions
-        self.timeseries['Long'] = (almal).astype(int)
-        self.timeseries['Short'] = (almas).astype(int)
+        REMA = cprice.ta.wma(length).ta.wma(smooth)
 
-        for i in range(len(self.timeseries['Long'])):
+
+        self.timeseries['Long'] = (REMA > REMA.shift(1)).astype(int)
+        self.timeseries['Short'] = (REMA <= REMA.shift(1)).astype(int)
+
+
+
+        for i in range(max(length, sdlen), len(self.timeseries['close'])):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):
@@ -66,6 +80,7 @@ class HullForLoop:
                 if(self.timeseries['Long'][i]):
                     self.strategy.entry("long", i)
                     continue
+
 
      #   self.strategy.printMetrics()
         return self.strategy.equity

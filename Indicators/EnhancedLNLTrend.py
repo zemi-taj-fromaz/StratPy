@@ -5,23 +5,11 @@ import CobraMetrics.Strategy as cobra
 import heapq
 import math
 
-def gaussian_filter(x_, sigma):
-    start =  x_.index.start
-    stop = x_.index.stop
 
-    length = stop - start + 1
 
-    # Initialize sums
-    gaussian_sum = 0.0
-    gaussian_weighted_sum = 0.0
 
-    # Apply Gaussian weights
-    for i in range(length):
-        weight = math.exp(-0.5 * ((i - (length - 1) / 2) / sigma) ** 2)
-        gaussian_sum += weight
-        gaussian_weighted_sum += x_[stop - i] * weight  # Using the value at index i
+### OVO CE MORAT PRICEKAT VOLUME DATA
 
-    return 0
 
 class EnhancedLNLTrend:
     def __init__(self, timeseries, startYear = "2018"):
@@ -70,6 +58,44 @@ class EnhancedLNLTrend:
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
+
+        bullishDMI = np.where(
+            ((self.timeseries["high"] - self.timeseries["high"].shift(1)) > (self.timeseries["low"].shift(1) - self.timeseries["low"])) &
+            ((self.timeseries["high"] - self.timeseries["high"].shift(1)) > 0),
+            (self.timeseries["high"] - self.timeseries["high"].shift(1)),
+            0
+        )
+
+        bearishDMI = np.where(
+            ((self.timeseries["low"].shift(1) - self.timeseries["low"]) > (
+                        self.timeseries["high"] - self.timeseries["high"].shift(1))) &
+            ((self.timeseries["low"].shift(1) - self.timeseries["low"]) > 0),
+            (self.timeseries["low"].shift(1) - self.timeseries["low"]),
+            0
+        )
+
+        DMIup = 100 * bullishDMI.ta.rma(dmilen) / bullishDMI.ta.tr(True).ta.rma(dmilen)
+        DMIdown = 100 * bearishDMI.ta.rma(dmilen) / bearishDMI.ta.tr(True).ta.rma(dmilen)
+
+        ADXx = np.where(
+            (DMIup + DMIdown) > 0,
+            100 * np.abs(DMIup - DMIdown) / (DMIup + DMIdown),
+            np.nan  # Assign NaN if the condition is not met
+        )
+        ADX = ADXx.ta.rma(dmilen)
+
+        LNL_DMI = np.where(
+            (DMIup > DMIdown) & (ADX > 20),  # First condition
+            1,  # Assign 1 if the first condition is met
+            np.where(
+                (DMIup < DMIdown) & (ADX > 20),  # Second condition
+                -1,  # Assign -1 if the second condition is met
+                0  # Assign 0 otherwise
+            )
+        )
+
+
+
 
         gaussian_smooth = self.timeseries["close"].rolling(window=length).apply(gaussian_filter, raw=False, kwargs={'sigma':sigma})
         filtered_sma = ta.ema(gaussian_smooth, length)
