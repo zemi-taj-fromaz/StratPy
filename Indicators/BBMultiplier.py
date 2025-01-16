@@ -4,6 +4,10 @@ import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
 import math
+
+
+## DONT USE THIS SOMETHING IS FUCKEd
+
 class BBMultiplier:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
@@ -33,7 +37,7 @@ class BBMultiplier:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for lenBB in range(11, 32):
+        for lenBB in range(5, 17):
             for multiplier in [x * 0.1 for x in range(1, 23, 1)]:  # Step by 0  .1
                 equity = self.calculate(lenBB, multiplier)
                 print(equity)
@@ -46,7 +50,7 @@ class BBMultiplier:
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        basis = self.timeseries["close"].ta.sma(lenBB)
+        basis = self.timeseries.ta.sma(lenBB)
         dev = multiplier * self.timeseries["close"].rolling(window=lenBB).std()
         upper = basis + dev
         lower = basis - dev

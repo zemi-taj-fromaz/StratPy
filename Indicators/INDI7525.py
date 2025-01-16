@@ -26,10 +26,10 @@ class INDI7525:
             print(", ".join(params))
 
     def run_test(self):
-        for length in range(15,20):
-            for atr_length in range(19,31):
-                for mult75 in [x * 0.1 for x in range(8, 13, 1)]:  # Step by 0.1
-                    for mult25 in [x * 0.1 for x in range(16, 23, 1)]:  # Step by 0.1
+        for length in range(15,22):
+            for atr_length in range(15,23):
+                for mult75 in [x * 0.1 for x in range(5, 11, 1)]:  # Step by 0.1
+                    for mult25 in [x * 0.1 for x in range(12, 20, 1)]:  # Step by 0.1
                         equity = self.calculate(length, atr_length, mult75, mult25)
                         print(equity)
                         self.store_result(equity, length, atr_length, mult75, mult25)

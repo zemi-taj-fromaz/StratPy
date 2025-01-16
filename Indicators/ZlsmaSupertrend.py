@@ -33,9 +33,9 @@ class ZlsmaSupertrend:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for supLen in range(6, 22):
-            for multiplier in [x * 0.01 for x in range(250, 350, 5)]:  # Step by 0.1
-                for lagLength in range(4, 16):
+        for supLen in range(6, 15):
+            for multiplier in [x * 0.01 for x in range(170, 280, 5)]:  # Step by 0.1
+                for lagLength in range(4, supLen):
                     equity = self.calculate( supLen, multiplier, lagLength)
                     print(equity)
                     self.store_result(equity, supLen, multiplier, lagLength)
@@ -67,10 +67,10 @@ class ZlsmaSupertrend:
                 plb = lb[i-1]
                 pub = ub[i-1]
 
-                if(not (lb[i] > plb or self.timseries["close"][i-1] < plb)):
+                if(not (lb[i] > plb or self.timeseries["close"][i-1] < plb)):
                     lb[i] = plb
 
-                if (not (ub[i] < pub or self.timseries["close"][i - 1] > pub)):
+                if (not (ub[i] < pub or self.timeseries["close"][i - 1] > pub)):
                     lb[i] = plb
 
                 if(pst is not None and pst == pub):

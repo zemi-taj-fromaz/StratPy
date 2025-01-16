@@ -9,7 +9,7 @@ def gaussian_filter(x_, sigma):
     start =  x_.index.start
     stop = x_.index.stop
 
-    length = stop - start + 1
+    length = stop - start
 
     # Initialize sums
     gaussian_sum = 0.0
@@ -19,7 +19,7 @@ def gaussian_filter(x_, sigma):
     for i in range(length):
         weight = math.exp(-0.5 * ((i - (length - 1) / 2) / sigma) ** 2)
         gaussian_sum += weight
-        gaussian_weighted_sum += x_[stop - i] * weight  # Using the value at index i
+        gaussian_weighted_sum += x_[stop - 1 - i] * weight  # Using the value at index i
 
     return 0
 
@@ -30,11 +30,11 @@ class GEMAD:
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity,length, sigma, atr_length, mult):
+    def store_result(self,equity,periode, length, sigma, atr_length, mult):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,length, sigma, atr_length, mult))
+        heapq.heappush(self.top_results, (equity,periode, length, sigma, atr_length, mult))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -52,11 +52,11 @@ class GEMAD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for periode in range(1, 15):
-            for length in range(12, 30):
-                for sigma in [x * 0.1 for x in range(12, 28, 1)]:  # Step by 0.1
-                    for atr_length in range(7, 21):
-                        for mult in [x * 0.1 for x in range(7, 15, 1)]:  # Step by 0.1
+        for periode in range(3, 16, 2):
+            for length in range(12, 30, 2):
+                for sigma in [x * 0.1 for x in range(12, 28, 2)]:  # Step by 0.1
+                    for atr_length in range(7, 21, 2):
+                        for mult in [x * 0.1 for x in range(7, 16, 2)]:  # Step by 0.1
                             equity = self.calculate(periode, length, sigma, atr_length, mult)
                             print(equity)
                             self.store_result(equity,periode, length, sigma, atr_length, mult)
@@ -66,13 +66,13 @@ class GEMAD:
 
 
 
-    def calculate(self,  length, sigma, atr_length, mult):
+    def calculate(self,  periode, length, sigma, atr_length, mult):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        gaussian_smooth = self.timeseries["close"].rolling(window=length).apply(gaussian_filter, raw=False, kwargs={'sigma':sigma})
+        gaussian_smooth = self.timeseries["close"].rolling(window=periode).apply(gaussian_filter, raw=False, kwargs={'sigma':sigma})
         filtered_sma = ta.ema(gaussian_smooth, length)
 
         atr = self.timeseries.ta.atr(atr_length)

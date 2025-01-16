@@ -33,9 +33,9 @@ class MacdEmaSd:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for lenFast in range(2, 50):
-            for lenSlow in range(2, 50):
-                for lookback in range(2, 50):
+        for lenFast in range(2, 15):
+            for lenSlow in range(lenFast + 1, 40):
+                for lookback in range(9, 31):
                     equity = self.calculate( lenFast, lenSlow, lookback)
                     print(equity)
                     self.store_result(equity, lenFast, lenSlow, lookback)
@@ -49,9 +49,8 @@ class MacdEmaSd:
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
         signalLength = 15
-        self.timeseries["macd"] = self.timeseries.ta.macd(lenFast, lenSlow, signalLength)
-
-        self.timeseries["mean"] = self.timeseries["macd"].ta.ema(lookback)
+        self.timeseries["macd"] = self.timeseries.ta.macd(lenFast, lenSlow, signalLength).iloc[:,0]
+        self.timeseries["mean"] = ta.ema(self.timeseries["macd"], lookback)
         stdDevMCD = self.timeseries["macd"].rolling(window = lookback).std()
 
         zScore = (self.timeseries["macd"] - self.timeseries["mean"]) / stdDevMCD

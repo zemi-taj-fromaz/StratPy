@@ -34,9 +34,9 @@ class RSIZScore:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for rsilen in range(1, 15):
-            for thresholdL in [x * 0.01 for x in range(55, 95, 2)]:  # Step by 0.1
-                for thresholdS in [x * 0.01 for x in range(-190, -90, 2)]:  # Step by 0.1
+        for rsilen in range(22, 31):
+            for thresholdL in [x * 0.01 for x in range(55, 95, 5)]:  # Step by 0.1
+                for thresholdS in [x * 0.01 for x in range(-190, -90, 5)]:  # Step by 0.1
                     equity = self.calculate(rsilen, thresholdL, thresholdS)
                     print(equity)
                     self.store_result(equity,rsilen, thresholdL, thresholdS)
@@ -50,8 +50,8 @@ class RSIZScore:
 
         src = (self.timeseries["close"] + self.timeseries["open"] + self.timeseries["low"] + self.timeseries["high"]) / 4
 
-        rsi = src.ta.rsi(rsilen)
-        rsiMean = rsi.ta.sma(rsilen)
+        rsi = ta.rsi(src, rsilen)
+        rsiMean = ta.sma(rsi, rsilen)
 
         rsiSD = rsi.rolling(window=rsilen).std()
         zScore = (rsi - rsiMean) / rsiSD

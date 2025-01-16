@@ -3,7 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-class MedianMACD:
+
+
+
+#### MMMM PRESKOCI OVO NESOT JEBE SA NONE VRIJEDNOSTIMA
+
+
+
+class StochSD:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
@@ -32,14 +39,20 @@ class MedianMACD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(35, 85):
-            for sdlength in range(1, 17):
+        for length in range(12, 40):
+            for sdlength in range(20, 50):
                 equity = self.calculate(length, sdlength)
                 print(equity)
                 self.store_result(equity,length, sdlength)
 
         self.print_top_results()
 
+    # Define a helper function to safely handle None and float arithmetic
+    def safe_add(self, a, b):
+        return None if a is None or b is None else a + b
+
+    def safe_sub(self, a, b):
+        return None if a is None or b is None else a - b
     def calculate(self,  length, sdlength):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
@@ -47,10 +60,12 @@ class MedianMACD:
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
         stoch = self.timeseries.ta.stoch(length)
+        print(stoch)
         atr = ta.stdev(stoch, sdlength)
 
-        upper = stoch    + atr
-        lower = stoch - atr
+        # Compute upper and lower bands using the helper functions
+        upper = stoch.apply(lambda x: self.safe_add(x, atr) if atr is not None else None)
+        lower = stoch.apply(lambda x: self.safe_sub(x, atr) if atr is not None else None)
 
         # Long and Short Conditions
         self.timeseries['Long'] = (lower > 50).astype(int)

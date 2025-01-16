@@ -33,9 +33,9 @@ class RMA:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for alpha in [x * 0.01 for x in range(82, 118, 1)]:  # Step by 0.1
-            for rma_len in range(7, 20):
-                for sd_mult in [x * 0.01 for x in range(50, 150, 5)]:  # Step by 0.1
+        for alpha in [x * 0.01 for x in range(75, 100, 3)]:  # Step by 0.1
+            for rma_len in range(15, 25):
+                for sd_mult in [x * 0.01 for x in range(150, 180, 5)]:  # Step by 0.1
                     equity = self.calculate(alpha, rma_len, sd_mult)
                     print(equity)
                     self.store_result(equity, alpha, rma_len, sd_mult)

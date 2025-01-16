@@ -30,9 +30,9 @@ class DemaAFR:
 
     def run_test(self):
 
-        for demaLength in range(2,19):
-            for lookback in range(2,19):
-                for atrFactor in [x * 0.1 for x in range(5, 35, 1)]:  # Step by 0.1
+        for demaLength in range(15,21):
+            for lookback in range(17,23):
+                for atrFactor in [x * 0.1 for x in range(15, 23, 1)]:  # Step by 0.1
                     equity = self.calculate(demaLength, lookback, atrFactor)
                     print(equity)
                     self.store_result(equity, demaLength, lookback, atrFactor)

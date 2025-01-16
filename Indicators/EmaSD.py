@@ -18,7 +18,7 @@ class EmaSD:
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (emalen, stdlen, factor))
+        heapq.heappush(self.top_results, (equity, emalen, stdlen, factor))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -36,9 +36,9 @@ class EmaSD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for emalen in range(2, 30, 1):
-            for stdlen in range(2, 30, 1):
-                for factor in [x * 0.1 for x in range(5, 25, 1)]:  # Step by 0.1
+        for emalen in range(28, 3, 1):
+            for stdlen in range(23, 33, 1):
+                for factor in [x * 0.1 for x in range(17, 26, 1)]:  # Step by 0.1
                     equity = self.calculate(   emalen, stdlen, factor)
                     print(equity)
                     self.store_result(equity,  emalen, stdlen, factor)

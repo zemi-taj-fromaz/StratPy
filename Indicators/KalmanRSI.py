@@ -33,9 +33,9 @@ class KalmanRSI:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for rsi_length in range(25, 42):
+        for rsi_length in range(15, 30):
             for kalman_gain in [x * 0.01 for x in range(5, 13, 1)]:  # Step by 0.1
-                for ma_length in range(2, 10):
+                for ma_length in range(5, 15):
                     equity = self.calculate(rsi_length, kalman_gain, ma_length)
                     print(equity)
                     self.store_result(equity, rsi_length, kalman_gain, ma_length)

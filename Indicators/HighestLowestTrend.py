@@ -32,10 +32,10 @@ class HLTrend:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for h_length in range(26, 33):
-            for l_length in range(25, 32):
-                for h_multi in [x * 0.01 for x in range(90, 110, 2)]:  # Step by 0.1
-                    for l_multi in [x * 0.01 for x in range(90, 110, 2)]:  # Step by 0.1
+        for h_length in range(28, 31):
+            for l_length in range(29, 31):
+                for h_multi in [x * 0.01 for x in range(85, 99, 2)]:  # Step by 0.1
+                    for l_multi in [x * 0.01 for x in range(105, 120, 2)]:  # Step by 0.1
                         equity = self.calculate(h_length, l_length, h_multi, l_multi)
                         print(equity)
                         self.store_result(equity,  h_length, l_length, h_multi, l_multi)

@@ -32,8 +32,8 @@ class SmoothLSMATrend:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length_lsma in range(10, 22):
-            for smoothing_length in range(2, 13):
+        for length_lsma in range(15, 35):
+            for smoothing_length in range(2, 22):
                 equity = self.calculate( length_lsma, smoothing_length)
                 print(equity)
                 self.store_result(equity,   length_lsma, smoothing_length)

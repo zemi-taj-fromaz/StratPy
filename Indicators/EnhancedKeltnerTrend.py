@@ -36,9 +36,9 @@ class EnhancedKeltnerTrend:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for atrLen in range(2, 30, 1):
-            for atrMult in [x * 0.1 for x in range(2, 15, 1)]:  # Step by 0.1
-                for maLen in range(2, 30, 1):
+        for atrLen in range(10, 22, 1):
+            for atrMult in [x * 0.1 for x in range(10, 22, 1)]:  # Step by 0.1
+                for maLen in range(4, 19, 1):
                     equity = self.calculate(   atrLen, atrMult, maLen)
                     print(equity)
                     self.store_result(equity,  atrLen, atrMult, maLen)

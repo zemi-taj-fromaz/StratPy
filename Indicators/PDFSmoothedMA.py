@@ -11,23 +11,20 @@ def pdf_ma(x_, variance, mean):
     start =  x_.index.start
     stop = x_.index.stop
 
-    length = stop - start + 1
-
-    x =  1 / (variance * math.sqrt(2 * math.pi)) * math.exp( - math.pow(x_ - mean,2)) / (2* math.pow(variance,2))
-
+    length = stop - start
     step = math.pi / (length - 1)
 
-    coeffs = np.array()
+    coeffs = []
     for i in range(length):
         factor = i * step
         weight =  1 / (variance * math.sqrt(2 * math.pi)) * math.exp( - math.pow(factor - mean,2)) / (2* math.pow(variance,2))
-        coeffs.put(weight)
-
+        coeffs.append(weight)
+    coeffs = np.array(coeffs)
     sum_weights = coeffs.sum()
     weighted_sum = 0
     for i in range(length):
         weight = coeffs[i]
-        src_val = x_[stop - i] if x_[stop - i] is not None else 0
+        src_val = x_[stop - 1 - i] if x_[stop - 1 - i] is not None else 0
         weighted_sum += weight * src_val
 
     weighted_avg = weighted_sum / sum_weights
@@ -61,9 +58,9 @@ class PDFSmoothedMA:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for period in range(2, 30, 1):
-            for variance in [x * 0.1 for x in range(10, 20, 1)]:  # Step by 0.1
-                for mean in [x * 0.1 for x in range(-8, 8, 1)]:  # Step by 0.1
+        for period in range(30, 37, 1):
+            for variance in [x * 0.1 for x in range(8, 15, 1)]:  # Step by 0.1
+                for mean in [x * 0.1 for x in range(-3, 3, 1)]:  # Step by 0.1
                         equity = self.calculate(  period, variance, mean)
                         print(equity)
                         self.store_result(equity, period, variance, mean)

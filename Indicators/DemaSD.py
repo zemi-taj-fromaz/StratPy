@@ -26,9 +26,9 @@ class DemaSD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for demaLength in range(8, 16):
-            for sd_length in range(10, 22):
-                for sd_mult in [x * 0.1 for x in range(23, 33, 1)]:  # Step by 0.1
+        for demaLength in range(5, 15):
+            for sd_length in range(15, 27):
+                for sd_mult in [x * 0.1 for x in range(20, 33, 1)]:  # Step by 0.1
                     equity = self.calculate( demaLength, sd_length, sd_mult)
                     print(equity)
                     self.store_result(equity,  demaLength, sd_length, sd_mult)

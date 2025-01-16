@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
+import pandas
 class SalmaRedK:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
@@ -32,10 +33,10 @@ class SalmaRedK:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(12, 44):
-            for smooth in range(19, 58):
-                for mult in [x * 0.01 for x in range(55, 95, 2)]:  # Step by 0.1
-                    for sdlen in range(19, 58):
+        for length in range(4, 22):
+            for smooth in range(1, 10):
+                for mult in [x * 0.01 for x in range(20, 300, 5)]:
+                    for sdlen in range(2, 14):
                         equity = self.calculate(  length, smooth, mult, sdlen)
                         print(equity)
                         self.store_result(equity,  length, smooth, mult, sdlen)
@@ -47,7 +48,7 @@ class SalmaRedK:
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        baseline = self.timeseries["close"].ta.wma(sdlen)
+        baseline = ta.wma(self.timeseries["close"], sdlen)
         dev = mult * self.timeseries["close"].rolling(window=sdlen).std()
         upper = baseline + dev
         lower = baseline - dev
@@ -62,7 +63,11 @@ class SalmaRedK:
             )
         )
 
-        REMA = cprice.ta.wma(length).ta.wma(smooth)
+
+        wma = ta.wma(close = pandas.Series(cprice), length = length)
+
+
+        REMA = ta.wma(wma, smooth)
 
 
         self.timeseries['Long'] = (REMA > REMA.shift(1)).astype(int)

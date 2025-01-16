@@ -33,10 +33,10 @@ class EmaZScore:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for emalen in range(11, 32):
-            for lookback in range(19, 145):
-                for thresholdL in [x * 0.1 for x in range(5, 30, 5)]:  # Step by 0.1
-                    for thresholdS in [x * 0.1 for x in range(-15, 5, 5)]:  # Step by 0.1
+        for emalen in range(7, 15):
+            for lookback in range(13, 25):
+                for thresholdL in [x * 0.1 for x in range(-15, 21, 5)]:  # Step by 0.1
+                    for thresholdS in [x * 0.1 for x in range(-25, 1, 5)]:  # Step by 0.1
                         equity = self.calculate(emalen, lookback, thresholdL, thresholdS)
                         print(equity)
                         self.store_result(equity,emalen, lookback, thresholdL, thresholdS)
@@ -49,7 +49,7 @@ class EmaZScore:
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
         ema = self.timeseries.ta.ema(emalen)
-        mean = ema.ta.ema(lookback)
+        mean = ta.ema(ema, lookback)
 
         stdDev = ema.rolling(window = lookback).std()
         zScore = (ema - mean) / stdDev

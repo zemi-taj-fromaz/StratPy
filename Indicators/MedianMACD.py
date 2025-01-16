@@ -32,10 +32,10 @@ class MedianMACD:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for fastLength in range(35, 85):
-            for slowlength in range(1, 17):
-                for MACDLength in range(35, 85):
-                    for MedLookBack in range(1, 17):
+        for fastLength in range(2, 18,2):
+            for slowlength in range(fastLength + 5, 49, 2):
+                for MACDLength in range(14, 28, 2):
+                    for MedLookBack in range(4, 19, 2):
                         equity = self.calculate(fastLength, slowlength, MACDLength, MedLookBack)
                         print(equity)
                         self.store_result(equity,fastLength, slowlength, MACDLength, MedLookBack)
