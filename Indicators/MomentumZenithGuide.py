@@ -35,10 +35,10 @@ class Zenith:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(2, 30, 2):
-            for stdv_length in range(2, 30, 2):
-                for vwap_length in range(2, 30, 2):
-                    for smaLength in range(2, 30, 2):
+        for length in range(3, 30, 2):
+            for stdv_length in range(3, 30, 2):
+                for vwap_length in range(3, 30, 2):
+                    for smaLength in range(3, 30, 2):
                         equity = self.calculate(  length, stdv_length, vwap_length, smaLength)
                         print(equity)
                         self.store_result(equity, length, stdv_length, vwap_length, smaLength)
@@ -51,19 +51,18 @@ class Zenith:
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["linregValue"] = self.timeseries.ta.linreg(length=length)
+        self.timeseries["linregValue"] = ta.linreg(self.timeseries["close"], length=length)
         self.timeseries["deviation"] = self.timeseries["close"] - self.timeseries["linregValue"]
 
         self.timeseries["stdevValue"] = self.timeseries["deviation"].rolling(window=stdv_length).std()
-
-        self.timeseries["vwapValue"] = self.timeseries.ta.vwma(length = vwap_length)
+        self.timeseries["vwapValue"] = ta.vwma(self.timeseries["close"], self.timeseries["volume"], vwap_length)
         self.timeseries["vwapDivergence"] = self.timeseries["close"] - self.timeseries["vwapValue"]
 
         self.timeseries["dynamicMultiplier"] = self.timeseries["close"].rolling(window = stdv_length).std()
+
         self.timeseries["combinedValue"] = self.timeseries["stdevValue"] * (1 + self.timeseries["vwapDivergence"] / self.timeseries["dynamicMultiplier"])
 
-        self.timeseries["centeredOscillator"] = self.timeseries["combinedValue"] - self.timeseries["combinedValue"].ta.sma(length = smaLength)
-
+        self.timeseries["centeredOscillator"] = self.timeseries["combinedValue"] - ta.sma(self.timeseries["combinedValue"], length = smaLength)
         self.timeseries['Long'] = (  self.timeseries["centeredOscillator"] > 0).astype(int)
         self.timeseries['Short'] = (  self.timeseries["centeredOscillator"] < 0).astype(int)
 

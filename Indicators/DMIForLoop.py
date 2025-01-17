@@ -50,7 +50,7 @@ def forloop(x_, start):
     # #####################
     return return_val
 
-class FFL:
+class DMIForLoop:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
@@ -92,10 +92,25 @@ class FFL:
         self.print_top_results()
 
 
-    def calculate(self, N, start, end, upper, lower):
+    def calculate(self, a, b, c):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
+
+        up = self.timeseries['high'].diff()
+        down = -self.timeseries["low"].diff()
+
+        self.timeseries['plusDM'] = np.where(
+            (self.timeseries['up'] > self.timeseries['down']) & (self.timeseries['up'] > 0),
+            self.timeseries['up'],
+            0
+        )
+
+        self.timeseries['minusDM'] = np.where(
+            (self.timeseries['down'] > self.timeseries['up']) & (self.timeseries['down'] > 0),
+            self.timeseries['down'],
+            0
+        )
 
         xval = (self.timeseries["close"] + self.timeseries["high"] + self.timeseries["low"]) / 3
 

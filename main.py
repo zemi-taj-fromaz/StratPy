@@ -57,13 +57,31 @@ import Indicators.SALMARedK
 import Indicators.DemaAFR
 import Indicators.EmaZScore
 import Indicators.BBMultiplier
+import Indicators.VawDema
+import Indicators.VawDemaCross
+import Indicators.FourierForLoop
+import Indicators.KalmanFilteredRSIOscillator
+import Indicators.KalmanHullRsiOscillator
+import Indicators.PPSarOsc
 
 df = pd.DataFrame() # Empty DataFrame
 
 # Load data
-df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high", "low", "close"]]
+df = pd.read_csv("timeseries/ETHUSD_1D.csv", sep = ",")[["time", "open", "high", "low", "close", "volume"]]
 
-#STC NEEDS TO BE REwORKED
+#### OSCILATORS #####
+
+#indi = Indicators.EWMAOsc.EwmaOsc(df)
+#indi = Indicators.KalmanFilteredRSIOscillator.KalmanPriceFilter(df)
+#indi = Indicators.NormT3Osc.NormT3Osc(df)
+#indi = Indicators.KalmanHullRsiOscillator.KalmanHullRsiOscillator(df) #### EHHHH THIS KIND OF SUCKS; no need to program this though
+#indi = Indicators.NeutralStateStochOsc.NSSTC(df)
+#indi = Indicators.PPSarOsc.PPSarOsc(df) # SMECE NE GUBI VRIJEME
+indi = Indicators.MomentumZenithGuide.Zenith(df) # NAZALOST SMECE IZGLEDA DA JE DOSTA ZAJEBANO I SPORO _> IAKO MAYBE U BUDUCNOSTI
+indi = stc.STC(df)
+
+#### PERPETUALS #####
+
 #indi = seven.INDI7525(df)
 #indi = lsma.LSMA(df)
 #indi = msd.MedianSD(df)
@@ -89,10 +107,7 @@ df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high",
 #indi = Indicators.EWMA.Ewma(df)
 #indi = Indicators.MedianSupertrend.MedianSupertrend(df)
 #indi = Indicators.DSMA.dsma(df)
-#indi = Indicators.EWMAOsc.EwmaOsc(df)
-#indi = Indicators.NormT3Osc.NormT3Osc(df)
-#indi = Indicators.NeutralStateStochOsc.NSSTC(df)
-#indi = Indicators.PPSarOsc.PPSarOsc(df)  - useless as well
+
 #indi = Indicators.Indicators.FourMACD.Zenith(df) #VOLUME DATA NOT AVAIL - useless _TODO TOMOOROWO
 #indi = Indicators.FourMACD useless as fuck nazalost
 #indi = Indicators.DemaEmaCross.DemaEmaCross(df)
@@ -104,7 +119,6 @@ df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high",
 #indi = Indicators.DemaAFR.DemaAFR(df)
 #indi = Indicators.HullForLoopRocheur.HullForLoop(df)
 #indi = Indicators.EnhancedKijunSenBase.EnhancedKijunSenBase(df)
-#indi = stc.STC(df)
 #indi = Indicators.GEMAD.GEMAD(df) ### OVAJ MALLO PRESPORO TRAJE:; DUGO SE TESTIRAM
 #indi = Indicators.JordoRSIZScore.RSIZScore(df)
 #indi = Indicators.ZlsmaSupertrend.ZlsmaSupertrend(df)
@@ -119,7 +133,12 @@ df = pd.read_csv("timeseries/SOLBTC_1D.csv", sep = ",")[["time", "open", "high",
 #indi = Indicators.SALMARedK.SalmaRedK(df) ### OVAJ MALLO PRESPORO TRAJE:; DUGO SE TESTIRAM
 #indi = Indicators.DemaAFR.DemaAFR(df)
 #indi = Indicators.EmaZScore.EmaZScore(df)
-indi = Indicators.BBMultiplier.BBMultiplier(df) ### SOMETHING IS FUCKED WITH THIS DONT USEs
+#indi = Indicators.BBMultiplier.BBMultiplier(df) ### SOMETHING IS FUCKED WITH THIS DONT USEs
+#indi = Indicators.VawDema.VawDema(df)
+#indi = Indicators.VawDemaCross.VawDemaCross(df)
+#indi = Indicators.FourierForLoop.FFL(df)
+
+
 
 start_time = time.time()  # Record the start time
 indi.run_test()

@@ -6,6 +6,18 @@ import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
 import pandas as pd
+
+def calcEwma(x_, alpha):
+    start =  x_.index.start
+    stop = x_.index.stop
+    length = stop - start
+
+    sum = x_[stop -1] * alpha
+    for i in range(1, length):
+        weight = math.pow(1 - alpha, i)
+        sum += weight * x_[stop - 1 - i]
+    return sum
+
 class EwmaOsc:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
@@ -36,7 +48,7 @@ class EwmaOsc:
         Run the optimization test over the parameter ranges and store the results.
         """
         for length in range(7, 21):
-            for norm_period in range(30, 70):
+            for norm_period in range(10, 40, 2):
                 equity = self.calculate( length, norm_period)
                 print(equity)
                 self.store_result(equity, length, norm_period)
@@ -51,19 +63,11 @@ class EwmaOsc:
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["ewma"] = self.timeseries["close"]
+        ewma = self.timeseries["close"].rolling(length).apply(calcEwma, raw = False, kwargs = {'alpha' : alpha})
+        lowest = ewma.rolling(norm_period).min()
+        highest = ewma.rolling(norm_period).max()
 
-
-        for i in range(length, len(self.timeseries)):
-            self.timeseries.loc[i, "ewma"] *= alpha
-            for j in range(length):
-                weight = math.pow(1 - alpha, j)
-                self.timeseries.loc[i, "ewma"] += weight * self.timeseries["ewma"][i-j]
-
-        self.timeseries["lowest"] =  self.timeseries["ewma"].rolling(window=norm_period).min()
-        self.timeseries["highest"] =  self.timeseries["ewma"].rolling(window=norm_period).max()
-
-        ewmaOsc = (self.timeseries["ewma"] - self.timeseries["lowest"]) / (self.timeseries["highest"] - self.timeseries["lowest"]) - 0.5
+        ewmaOsc = (ewma - lowest) / (highest - lowest) - 0.5
 
         self.timeseries['Long'] = (ewmaOsc > 0).astype(int)
         self.timeseries['Short'] = (ewmaOsc < 0).astype(int)

@@ -28,10 +28,10 @@ class STC:
             print(", ".join(params))
 
     def run_test(self):
-        for sensitivity in [x * 0.001 for x in range(335, 675, 30)]:  # Step by 0.1
-            for length in range(25,50, 2):
-                for fastLength in range(30,60, 2):
-                    for slowLength in  range(150,250, 10):  # Step by 0.1
+        for sensitivity in [x * 0.001 for x in range(305, 4355, 10)]:  # Step by 0.1
+            for length in range(26,51, 2):
+                for fastLength in range(20,40, 2):
+                    for slowLength in  range(230,290, 5):  # Step by 0.1
                         equity = self.calculate(sensitivity, length, fastLength, slowLength)
                         print(equity)
                         self.store_result(equity, sensitivity, length, fastLength, slowLength)

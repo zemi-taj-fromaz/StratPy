@@ -37,18 +37,18 @@ def f_volWDEMA(x_, tr, dema):
     else:
         return 0  # Return 0 if trSumDEMA is 0 to avoid division by zero
 
-class VawDema:
+class VawDemaCross:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity, length):
+    def store_result(self,equity, length1, length2):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,length))
+        heapq.heappush(self.top_results, (equity,length1, length2))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -66,27 +66,32 @@ class VawDema:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(11, 150):  # Step by 0.1
-            equity = self.calculate(length)
-            print(equity)
-            self.store_result(equity,length)
+        for length1 in range(4, 78):  # Step by 0.1
+            for length2 in range(length1 + 1, length1 + 56):  # Step by 0.1
+                equity = self.calculate(length1, length2)
+                print(equity)
+                self.store_result(equity, length1, length2)
         self.print_top_results()
 
-    def calculate(self, length):
-        print(f"Calculating for: {length}")
+    def calculate(self, length1, length2):
+        args = locals()  # returns a dictionary of all local variables
+        print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["dema"] = self.timeseries.ta.dema(length)
-        self.timeseries["tr"] = self.timeseries.ta.true_range(length)
+        self.timeseries["dema1"] = self.timeseries.ta.dema(length1)
+        self.timeseries["tr1"] = self.timeseries.ta.true_range(length1)
+        self.timeseries["dema2"] = self.timeseries.ta.dema(length2)
+        self.timeseries["tr2"] = self.timeseries.ta.true_range(length2)
 
-        kalmanFilteredPrice = self.timeseries["close"].rolling(window=length).apply(f_volWDEMA, raw=False, kwargs={'tr':self.timeseries["tr"], 'dema': self.timeseries["dema"]
-                                                                                                        })
+        vwdema1 = self.timeseries["close"].rolling(window=length1).apply(f_volWDEMA, raw=False, kwargs={'tr':self.timeseries["tr1"], 'dema': self.timeseries["dema1"]})
+        vwdema2 = self.timeseries["close"].rolling(window=length2).apply(f_volWDEMA, raw=False, kwargs={'tr':self.timeseries["tr2"], 'dema': self.timeseries["dema2"]})
+
                 # Long and Short Conditions
-        self.timeseries['Long'] = ( kalmanFilteredPrice > kalmanFilteredPrice.shift(1)).astype(int)
-        self.timeseries['Short'] = (kalmanFilteredPrice < kalmanFilteredPrice.shift(1)).astype(int)
+        self.timeseries['Long'] = ( vwdema1 >= vwdema2).astype(int)
+        self.timeseries['Short'] = (vwdema1 < vwdema2.shift(1)).astype(int)
 
-        for i in range(length, len(self.timeseries)):
+        for i in range(max(length1, length2), len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

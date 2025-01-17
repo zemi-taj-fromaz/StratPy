@@ -1,23 +1,20 @@
-import math
-
 import pandas_ta as ta
 import matplotlib.pyplot as plt
 import numpy as np
 import CobraMetrics.Strategy as cobra
 import heapq
-import pandas as pd
-class PPSarOsc:
+class efi:
     def __init__(self, timeseries, startYear = "2018"):
         self.timeseries = timeseries
         self.startYear = startYear
         self.strategy = cobra.Strategy(self.timeseries, startYear)
         self.top_results = []
 
-    def store_result(self,equity,  start, inc, maxx):
+    def store_result(self,equity, efi):
         """
         Store the result in the heap, keeping only the top 10 results.
         """
-        heapq.heappush(self.top_results, (equity,start, inc, maxx))
+        heapq.heappush(self.top_results, (equity,efi))
         if len(self.top_results) > 10:
             heapq.heappop(self.top_results)
 
@@ -35,28 +32,28 @@ class PPSarOsc:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for start in [x * 0.01 for x in range(1, 100, 10)]:  # Step by 0.1
-            for inc in [x * 0.001 for x in range(1, 5000, 400)]:  # Step by 0.1
-                for maxx in [x * 0.1 for x in range(1, 30, 2)]:  # Step by 0.1
-                    equity = self.calculate(  start, inc, maxx)
-                    print(equity)
-                    self.store_result(equity,start, inc, maxx)
+        for efi in range(1, 150):
+            equity = self.calculate(efi)
+            print(equity)
+            self.store_result(equity, efi)
 
         self.print_top_results()
 
-    def calculate(self, start, inc, maxx):
+    def calculate(self, efi):
         args = locals()  # returns a dictionary of all local variables
         print(f"Calculating for: {', '.join(f'{key}={value}' for key, value in args.items() if key != 'self')}")
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["sar"] = self.timeseries.ta.psar(start, inc, maxx).iloc[:, 1]
-        self.timeseries["oscillator"] = self.timeseries["sar"] - self.timeseries["close"]
+        hl2 =  (self.timeseries["high"] + self.timeseries["low"])/2
+        change = hl2.diff()
 
-        self.timeseries['Long'] = (  self.timeseries["oscillator"] > 0).astype(int)
-        self.timeseries['Short'] = (  self.timeseries["oscillator"] < 0).astype(int)
+        lol = ta.ema(change * self.timeseries["volume"], efi)
+        # Long and Short Conditions
+        self.timeseries['Long'] = (lol >  0).astype(int)
+        self.timeseries['Short'] = (lol < 0).astype(int)
 
-        for i in range(20, len(self.timeseries)):
+        for i in range(efi, len(self.timeseries)):
                 self.strategy.process(i)
 
                 if(self.timeseries['Short'][i]):

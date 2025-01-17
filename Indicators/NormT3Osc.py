@@ -35,13 +35,12 @@ class NormT3Osc:
         """
         Run the optimization test over the parameter ranges and store the results.
         """
-        for length in range(2, 21):
-            for vf in [x * 0.1 for x in range(-57, 57, 10)]:  # Step by 0.1
-                for norm_period in range(30, 70, 5):
-                    for malen in range(12, 28, 2):
-                        equity = self.calculate( length, vf, norm_period, malen)
-                        print(equity)
-                        self.store_result(equity, length, vf, norm_period, malen)
+        for length in range(1, 6):
+            for vf in [x * 0.1 for x in range(3, 13, 1)]:  # Step by 0.1
+                for norm_period in range(15, 25, 1):
+                    equity = self.calculate( length, vf, norm_period, 0)
+                    print(equity)
+                    self.store_result(equity, length, vf, norm_period, 0)
 
         self.print_top_results()
 
@@ -52,17 +51,17 @@ class NormT3Osc:
 
         self.strategy = cobra.Strategy(self.timeseries, self.startYear)
 
-        self.timeseries["subject"] = self.timeseries.ta.t3(length=length, a = vf)
+        subject = self.timeseries.ta.t3(length=length, a = vf)
 
-        self.timeseries["lowest"] =  self.timeseries["subject"].rolling(window=norm_period).min()
-        self.timeseries["highest"] =  self.timeseries["subject"].rolling(window=norm_period).max()
+        lowest =  subject.rolling(window=norm_period).min()
+        highest =  subject.rolling(window=norm_period).max()
 
-        self.timeseries["plotosc"] = (self.timeseries["subject"] - self.timeseries["lowest"]) / (self.timeseries["highest"] - self.timeseries["lowest"]) - 0.5
+        plotosc = (subject - lowest) / (highest - lowest) - 0.5
 
-        self.timeseries["sig_ma"] = ta.sma(self.timeseries["plotosc"], length = malen)
+       # sigma = ta.sma(plotosc, length = malen)
 
-        self.timeseries['Long'] = ( self.timeseries["plotosc"] > 0).astype(int)
-        self.timeseries['Short'] = ( self.timeseries["plotosc"] < 0).astype(int)
+        self.timeseries['Long'] = ( plotosc > 0).astype(int)
+        self.timeseries['Short'] = (plotosc< 0).astype(int)
 
         for i in range(length, len(self.timeseries)):
                 self.strategy.process(i)
